@@ -4,14 +4,58 @@ const app=express();
 
 app.use(express.json());
 
-app.get("/", (req, res)=>{
-  res.send("Hello from note taking API");
+interface Note {
+  id:  number;
+  title: string;
+  content: string;
+}
+
+const notes : Note[] = [];
+let nextId : number = 1;
+
+app.get("/notes", (req, res)=>{
+  res.json(notes);
+})
+
+app.get("/notes/:id", (req, res)=>{
+  for(let i = 0; i<notes.length; i++) {
+    if(notes[i].id===Number(req.params.id)) {
+      return res.json(notes[i]);
+    }
+  }
+  res.status(404).json({msg: "Invalid Id."})
 })
 
 app.post("/notes", (req, res)=>{
-  const data = req.body;
-  console.log(data);
-  res.json(data);
+  const note = {
+    id: nextId,
+    title: req.body.title,
+    content: req.body.content
+  }
+  nextId++;
+  notes.push(note);
+  res.status(201).json(note)
+})
+
+app.put("/notes/:id", (req, res)=>{
+  for(let i = 0; i<notes.length; i++) {
+    if(notes[i].id===Number(req.params.id)) {
+      notes[i].title=req.body.title;
+      notes[i].content=req.body.content;
+      return res.json(notes[i]);
+    }
+  }
+  res.status(404).json({msg: "Invalid Id."})
+})
+
+app.delete("/notes/:id", (req, res)=>{
+  for(let i = 0; i<notes.length; i++) {
+    if(notes[i].id===Number(req.params.id)) {
+      notes.splice(i, 1);
+      return res.json({msg: "Note succesfully deleted."})
+    }
+  }
+  res.status(404).json({msg: "Invalid Id."})
 })
 
 export default app;
