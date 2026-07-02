@@ -1,5 +1,5 @@
 import express from "express";
-import zod from "zod";
+import z from "zod";
 
 const app=express();
 
@@ -19,17 +19,23 @@ const noteSchema = z.object({
 const notes : Note[] = [];
 let nextId : number = 1;
 
+function findIndexById(id: number): number {
+  for(let i=0; i<notes.length; i++) {
+    if(notes[i].id===Number(id)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 app.get("/notes", (req, res)=>{
   res.json(notes);
 })
 
 app.get("/notes/:id", (req, res)=>{
-  for(let i = 0; i<notes.length; i++) {
-    if(notes[i].id===Number(req.params.id)) {
-      return res.json(notes[i]);
-    }
-  }
-  return res.status(404).json({msg: "Invalid Id."})
+  const i = findIndexById(Number(req.params.id));
+  if(i<0) {return res.status(404).json({msg: "Invalid Id."})};
+  return res.json(notes[i]);
 })
 
 app.post("/notes", (req, res)=>{
@@ -48,24 +54,18 @@ app.post("/notes", (req, res)=>{
 })
 
 app.put("/notes/:id", (req, res)=>{
-  for(let i = 0; i<notes.length; i++) {
-    if(notes[i].id===Number(req.params.id)) {
-      notes[i].title=req.body.title;
-      notes[i].content=req.body.content;
-      return res.json(notes[i]);
-    }
-  }
-  res.status(404).json({msg: "Invalid Id."})
+  const i = findIndexById(Number(req.params.id));
+  if(i<0){return res.status(404).json({msg: "Invalid Id."})}
+  notes[i].title=req.body.title;
+  notes[i].content=req.body.content;
+  return res.json(notes[i]);
 })
 
 app.delete("/notes/:id", (req, res)=>{
-  for(let i = 0; i<notes.length; i++) {
-    if(notes[i].id===Number(req.params.id)) {
-      notes.splice(i, 1);
-      return res.json({msg: "Note succesfully deleted."})
-    }
-  }
-  res.status(404).json({msg: "Invalid Id."})
+  const i = findIndexById(Number(req.params.id));
+  if(i<0){return res.status(404).json({msg: "Invalid Id."})}
+  notes.splice(i, 1);
+  return res.json({msg: "Note succesfully deleted."})
 })
 
 export default app;
