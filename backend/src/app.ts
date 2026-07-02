@@ -1,4 +1,5 @@
 import express from "express";
+import zod from "zod";
 
 const app=express();
 
@@ -9,6 +10,11 @@ interface Note {
   title: string;
   content: string;
 }
+
+const noteSchema = z.object({
+  title: z.string(),
+  content: z.string()
+})
 
 const notes : Note[] = [];
 let nextId : number = 1;
@@ -23,14 +29,18 @@ app.get("/notes/:id", (req, res)=>{
       return res.json(notes[i]);
     }
   }
-  res.status(404).json({msg: "Invalid Id."})
+  return res.status(404).json({msg: "Invalid Id."})
 })
 
 app.post("/notes", (req, res)=>{
+  const result = noteSchema.safeParse(req.body);
+  if(!result.success){
+    return res.status(400).json({msg: "Wrong input format."})
+  }
   const note = {
     id: nextId,
-    title: req.body.title,
-    content: req.body.content
+    title: result.data.title,
+    content: result.data.content
   }
   nextId++;
   notes.push(note);
