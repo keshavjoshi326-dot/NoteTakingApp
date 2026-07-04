@@ -11,10 +11,22 @@ interface Note {
   content: string;
 }
 
-const noteSchema = z.object({
-  title: z.string(),
-  content: z.string()
-})
+const titleSchema = z.string().trim().max(100);
+const contentSchema = z.string().trim().max(1000);
+
+const createNoteSchema = z.object({
+  title: titleSchema.optional(),
+  content: contentSchema.optional()
+}).refine(data => {
+    return Boolean(data.title || data.content);
+  }, {message: "Provide atleast one field to create a note."});
+
+const updateNoteSchema = z.object({
+    title: titleSchema.optional(),
+    content: contentSchema.optional()
+}).refine(data => {
+    return data.title !== undefined || data.content !== undefined;
+  }, {message: "Provide atleast one field to update."});
 
 const notes : Note[] = [];
 let nextId : number = 1;
@@ -34,14 +46,14 @@ app.get("/notes", (req, res)=>{
 
 app.get("/notes/:id", (req, res)=>{
   const i = findIndexById(Number(req.params.id));
-  if(i<0) {return res.status(404).json({msg: "Invalid Id."})};
+  if(i<0) {return res.status(404).json({message: "Invalid Id."})};
   return res.json(notes[i]);
 })
 
 app.post("/notes", (req, res)=>{
-  const result = noteSchema.safeParse(req.body);
+  const result = createNoteSchema.safeParse(req.body);
   if(!result.success){
-    return res.status(400).json({msg: "Wrong input format."})
+    return res.status(400).json({message: result.error.issues[0].message});
   }
   const note = {
     id: nextId,
@@ -54,18 +66,31 @@ app.post("/notes", (req, res)=>{
 })
 
 app.put("/notes/:id", (req, res)=>{
+  const result = updateNoteSchema.safeParse(req.body);
+
+  if(!result.success){
+    return res.status(400).json({message: result.error.issues[0].message});
+  }
+
   const i = findIndexById(Number(req.params.id));
-  if(i<0){return res.status(404).json({msg: "Invalid Id."})}
-  notes[i].title=req.body.title;
-  notes[i].content=req.body.content;
+
+  if(i<0){return res.status(404).json({message: "Invalid Id."})}
+
+  if(result.data.title !== undefined) {
+    notes[i].title=result.data.title;
+  }
+  if(result.data.content !== undefined) {
+    notes[i].content=result.data.content;
+  }
+
   return res.json(notes[i]);
 })
 
 app.delete("/notes/:id", (req, res)=>{
   const i = findIndexById(Number(req.params.id));
-  if(i<0){return res.status(404).json({msg: "Invalid Id."})}
+  if(i<0){return res.status(404).json({message: "Invalid Id."})}
   notes.splice(i, 1);
-  return res.json({msg: "Note succesfully deleted."})
+  return res.json({message: "Note succesfully deleted."})
 })
 
 export default app;
