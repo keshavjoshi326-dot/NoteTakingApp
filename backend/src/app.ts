@@ -1,5 +1,5 @@
 import express from "express";
-import z from "zod";
+import {createNoteSchema, updateNoteSchema} from "./validation.ts"
 
 const app=express();
 
@@ -10,23 +10,6 @@ interface Note {
   title: string;
   content: string;
 }
-
-const titleSchema = z.string().trim().max(100);
-const contentSchema = z.string().trim().max(1000);
-
-const createNoteSchema = z.object({
-  title: titleSchema.optional(),
-  content: contentSchema.optional()
-}).refine(data => {
-    return Boolean(data.title || data.content);
-  }, {message: "Provide atleast one field to create a note."});
-
-const updateNoteSchema = z.object({
-    title: titleSchema.optional(),
-    content: contentSchema.optional()
-}).refine(data => {
-    return data.title !== undefined || data.content !== undefined;
-  }, {message: "Provide atleast one field to update."});
 
 const notes : Note[] = [];
 let nextId : number = 1;
