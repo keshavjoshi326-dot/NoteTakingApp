@@ -1,5 +1,6 @@
 import express from "express";
-import {createNoteSchema, updateNoteSchema} from "./validation.ts"
+import {createNoteSchema, updateNoteSchema} from "./validation.ts";
+import {validate} from "./middleware.ts";
 
 const app=express();
 
@@ -33,37 +34,28 @@ app.get("/notes/:id", (req, res)=>{
   return res.json(notes[i]);
 })
 
-app.post("/notes", (req, res)=>{
-  const result = createNoteSchema.safeParse(req.body);
-  if(!result.success){
-    return res.status(400).json({message: result.error.issues[0].message});
-  }
+app.post("/notes", validate(createNoteSchema), (req, res)=>{
   const note = {
     id: nextId,
-    title: result.data.title,
-    content: result.data.content
+    title: req.validatedBody.title,
+    content: req.validatedBody.content
   }
+
   nextId++;
   notes.push(note);
   res.status(201).json(note)
 })
 
-app.put("/notes/:id", (req, res)=>{
-  const result = updateNoteSchema.safeParse(req.body);
-
-  if(!result.success){
-    return res.status(400).json({message: result.error.issues[0].message});
-  }
-
+app.put("/notes/:id", validate(updateNoteSchema), (req, res)=>{
   const i = findIndexById(Number(req.params.id));
 
   if(i<0){return res.status(404).json({message: "Invalid Id."})}
 
-  if(result.data.title !== undefined) {
-    notes[i].title=result.data.title;
+  if(req.validatedBody.title !== undefined) {
+    notes[i].title=req.validatedBody.title;
   }
-  if(result.data.content !== undefined) {
-    notes[i].content=result.data.content;
+  if(req.validatedBody.content !== undefined) {
+    notes[i].content=req.validatedBody.content;
   }
 
   return res.json(notes[i]);
