@@ -16,7 +16,7 @@ function findIndexById(id: number): number {
   return -1;
 }
 
-export function create(data): void {
+export function create(data): Note {
   const note : Note = {
     id: nextId,
     title: data.title ?? "",
@@ -25,6 +25,7 @@ export function create(data): void {
 
   nextId++;
   notes.push(note);
+  return note;
 }
 
 export function getAll(): Readonly<Note>[] {
@@ -48,4 +49,11 @@ export function update(id: number, data: Partial<Omit<Note, "id">>): Note | unde
   }
 
   return notes[i]
+}
+
+export function deleteNote(id: number): Readonly<Note> | undefined {
+  const i = findIndexById(id);
+  if(i<0){return undefined};
+
+  return notes.splice(i, 1)[0];
 }
