@@ -35,10 +35,10 @@ app.get("/notes/:id", (req, res)=>{
 })
 
 app.post("/notes", validate(createNoteSchema), (req, res)=>{
-  const note = {
+  const note : Note = {
     id: nextId,
-    title: req.validatedBody.title,
-    content: req.validatedBody.content
+    title: req.validatedBody.title ?? "",
+    content: req.validatedBody.content ?? "",
   }
 
   nextId++;
